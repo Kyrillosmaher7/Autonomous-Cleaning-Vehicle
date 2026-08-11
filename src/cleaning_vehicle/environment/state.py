@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -13,21 +12,19 @@ class State:
     """
     Immutable representation of the cleaning vehicle's RL state.
 
-    The state contains only information that describes the
-    current situation of the agent:
+    Dynamic information:
 
         - robot position
         - remaining dirty cells
+        - remaining battery
 
-    Static environment information such as obstacles belongs
-    to the Grid and is not stored in the state for Version 1.
-
-    The state is immutable and hashable, making it suitable
-    for use as a key in a Q-table.
+    Static environment information such as obstacles and the
+    charging station belongs to the environment.
     """
 
     position: Position
     dirty_cells: FrozenSet[Position]
+    battery: int = 20
 
     def __post_init__(self) -> None:
         """Validate and normalize the state."""
@@ -44,6 +41,16 @@ class State:
                 "Position coordinates cannot be negative."
             )
 
+        if not isinstance(self.battery, int):
+            raise TypeError(
+                "Battery must be an integer."
+            )
+
+        if self.battery < 0:
+            raise ValueError(
+                "Battery cannot be negative."
+            )
+
         # Ensure dirty_cells is always a frozenset.
         object.__setattr__(
             self,
@@ -53,6 +60,7 @@ class State:
 
         # Validate every dirty-cell position.
         for dirty_position in self.dirty_cells:
+
             if (
                 not isinstance(dirty_position, tuple)
                 or len(dirty_position) != 2
@@ -75,6 +83,7 @@ class State:
                 raise ValueError(
                     "Dirty cell coordinates cannot be negative."
                 )
+
 
 
     @property
@@ -108,6 +117,50 @@ class State:
         return position in self.dirty_cells
 
 
+    @property
+    def battery_empty(self) -> bool:
+        """Return True when the battery is empty."""
+
+        return self.battery == 0
+
+    def consume_battery(self, amount: int = 1) -> State:
+        """
+        Return a new state with reduced battery.
+
+        Battery can never become negative.
+        """
+
+        if amount < 0:
+            raise ValueError(
+                "Battery consumption amount cannot be negative."
+            )
+
+        new_battery = max(0, self.battery - amount)
+
+        return State(
+            position=self.position,
+            dirty_cells=self.dirty_cells,
+            battery=new_battery,
+        )
+
+    def recharge(self, max_battery: int) -> State:
+        """
+        Return a new state with a fully charged battery.
+        """
+
+        if max_battery <= 0:
+            raise ValueError(
+                "max_battery must be positive."
+            )
+
+        return State(
+            position=self.position,
+            dirty_cells=self.dirty_cells,
+            battery=max_battery,
+        )
+
+
+
     def move(self, position: Position) -> State:
         """
         Return a new state with the robot at a new position.
@@ -118,17 +171,13 @@ class State:
         return State(
             position=position,
             dirty_cells=self.dirty_cells,
+            battery=self.battery,
         )
 
     def clean(self, position: Position) -> State:
         """
         Return a new state where the specified dirty cell
         has been cleaned.
-
-        The current state is not modified.
-
-        If the position is not dirty, the returned state
-        is equivalent to the current state.
         """
 
         if position not in self.dirty_cells:
@@ -139,16 +188,18 @@ class State:
         return State(
             position=self.position,
             dirty_cells=remaining_dirty,
+            battery=self.battery,
         )
 
     def move_and_clean(self, position: Position) -> State:
         """
         Return a new state where:
 
-            1. The robot moves to `position`.
-            2. The cell is cleaned if it is dirty.
+            1. The robot moves to position.
+            2. The cell is cleaned if dirty.
 
-        The current state is not modified.
+        Battery is unchanged here because battery consumption
+        belongs to the environment transition.
         """
 
         remaining_dirty = self.dirty_cells - {position}
@@ -156,40 +207,33 @@ class State:
         return State(
             position=position,
             dirty_cells=remaining_dirty,
+            battery=self.battery,
         )
 
-    # ==========================================================
-    # Q-Learning Representation
-    # ==========================================================
 
-    def as_tuple(self) -> tuple[Position, FrozenSet[Position]]:
+    def as_tuple(
+        self,
+    ) -> tuple[Position, FrozenSet[Position], int]:
         """
-        Return the state as a tuple.
+        Return the complete dynamic state representation.
 
-        This gives us an explicit representation that can
-        be used by future Q-Learning components.
+        Battery is included because it affects future decisions.
         """
 
         return (
             self.position,
             self.dirty_cells,
+            self.battery,
         )
 
     def __hash__(self) -> int:
-        """
-        Return a hash based on the complete state.
-
-        This allows:
-
-            Q[state]
-
-        to work with a dictionary-based Q-table.
-        """
+        """Return a hash based on the complete state."""
 
         return hash(
             (
                 self.position,
                 self.dirty_cells,
+                self.battery,
             )
         )
 
@@ -197,6 +241,7 @@ class State:
         return (
             f"State("
             f"position={self.position}, "
-            f"dirty_cells={self.dirty_cells}"
+            f"dirty_cells={self.dirty_cells}, "
+            f"battery={self.battery}"
             f")"
         )

@@ -491,8 +491,8 @@ class TestAsTuple:
         assert dirty_state.as_tuple() == (
             dirty_state.position,
             dirty_state.dirty_cells,
+            dirty_state.battery,
         )
-
 
 # ============================================================
 # Representation
