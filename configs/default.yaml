@@ -1,0 +1,15 @@
+project:
+  name: autonomous-cleaning-vehicle
+  version: "0.1.0"
+
+environment:
+  config: configs/environments/v1_static.yaml
+
+agent:
+  config: configs/agents/random.yaml
+
+training:
+  episodes: 100
+  max_steps_per_episode: 500
+
+random_seed: 42

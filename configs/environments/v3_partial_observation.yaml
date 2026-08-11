@@ -1,0 +1,19 @@
+version: "v3"
+
+grid:
+  width: 10
+  height: 10
+
+dirt:
+  count: 10
+
+obstacles:
+  count: 5
+
+battery:
+  initial: 100
+
+dynamic_obstacles: true
+partial_observation: true
+
+max_steps: 500
