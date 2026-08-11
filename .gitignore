@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Generated data
+data/raw/*
+data/processed/*
+!data/README.md
+
+# Generated models
+models/*
+!models/.gitkeep
+
+# Experiment results
+experiments/*/results/*
+!experiments/*/results/.gitkeep
+
+# Reports
+reports/figures/*
+reports/results/*
+!reports/figures/.gitkeep
+!reports/results/.gitkeep
+
+# Python build
+build/
+dist/
+*.egg-info/
