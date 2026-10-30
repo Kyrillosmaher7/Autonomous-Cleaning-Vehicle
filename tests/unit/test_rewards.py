@@ -345,7 +345,10 @@ def test_reaching_charger_recharges_battery_and_gives_reward():
 
     assert next_state.position == (0, 0)
     assert next_state.battery == 10
-    assert reward == 4.0
+
+    # Movement (-1.0) + charging (+1.0) = 0.0.
+    assert reward == 0.0
+
     assert done is False
 
 
