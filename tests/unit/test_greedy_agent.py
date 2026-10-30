@@ -1,5 +1,6 @@
 from cleaning_vehicle.agents import BaseAgent, GreedyAgent
 from cleaning_vehicle.environment.actions import Action
+from cleaning_vehicle.environment.observation import Observation
 from cleaning_vehicle.environment.state import State
 from cleaning_vehicle.agents import GreedyAgent
 from cleaning_vehicle.utils.episode import run_episode
@@ -127,3 +128,168 @@ def test_greedy_agent_can_clean_episode():
     assert result.completed is True
     assert result.cleaned_cells == 2
     assert result.steps <= 20
+
+
+# ==========================================================
+# V2 - Partial Observation
+# ==========================================================
+
+
+def test_greedy_agent_select_observation_moves_toward_visible_dirty_cell():
+    """
+    V2:
+    GreedyAgent should move toward the nearest visible dirty cell.
+    """
+
+    agent = GreedyAgent()
+
+    observation = Observation(
+        position=(2, 2),
+        battery=10,
+        dirty_cells=frozenset({
+            (1, 2),
+        }),
+        dynamic_obstacles=frozenset(),
+    )
+
+    action = agent.select_observation(observation)
+
+    assert action == Action.UP
+
+
+def test_greedy_agent_select_observation_moves_right_toward_visible_dirty_cell():
+    """
+    V2:
+    GreedyAgent should move toward a visible dirty cell to the right.
+    """
+
+    agent = GreedyAgent()
+
+    observation = Observation(
+        position=(2, 2),
+        battery=10,
+        dirty_cells=frozenset({
+            (2, 3),
+        }),
+        dynamic_obstacles=frozenset(),
+    )
+
+    action = agent.select_observation(observation)
+
+    assert action == Action.RIGHT
+
+
+def test_greedy_agent_select_observation_moves_left_toward_visible_dirty_cell():
+    """
+    V2:
+    GreedyAgent should move toward a visible dirty cell to the left.
+    """
+
+    agent = GreedyAgent()
+
+    observation = Observation(
+        position=(2, 2),
+        battery=10,
+        dirty_cells=frozenset({
+            (2, 1),
+        }),
+        dynamic_obstacles=frozenset(),
+    )
+
+    action = agent.select_observation(observation)
+
+    assert action == Action.LEFT
+
+
+def test_greedy_agent_select_observation_moves_down_toward_visible_dirty_cell():
+    """
+    V2:
+    GreedyAgent should move toward a visible dirty cell below.
+    """
+
+    agent = GreedyAgent()
+
+    observation = Observation(
+        position=(2, 2),
+        battery=10,
+        dirty_cells=frozenset({
+            (3, 2),
+        }),
+        dynamic_obstacles=frozenset(),
+    )
+
+    action = agent.select_observation(observation)
+
+    assert action == Action.DOWN
+
+
+def test_greedy_agent_select_observation_uses_nearest_visible_dirty_cell():
+    """
+    V2:
+    When multiple dirty cells are visible, the nearest one
+    should determine the selected action.
+    """
+
+    agent = GreedyAgent()
+
+    observation = Observation(
+        position=(2, 2),
+        battery=10,
+        dirty_cells=frozenset({
+            (4, 2),
+            (2, 3),
+            (0, 2),
+        }),
+        dynamic_obstacles=frozenset(),
+    )
+
+    action = agent.select_observation(observation)
+
+    assert action == Action.RIGHT
+
+
+def test_greedy_agent_select_observation_ignores_hidden_dirty_cells():
+    """
+    V2:
+    The agent only receives visible dirty cells through the
+    Observation.
+
+    A distant dirty cell must therefore have no influence
+    on the selected action.
+    """
+
+    agent = GreedyAgent()
+
+    observation = Observation(
+        position=(2, 2),
+        battery=10,
+        dirty_cells=frozenset(),
+        dynamic_obstacles=frozenset(),
+    )
+
+    action = agent.select_observation(observation)
+
+    assert action == Action.UP
+
+
+def test_greedy_agent_select_observation_returns_fallback_when_no_visible_dirt():
+    """
+    V2:
+    If no dirty cell is visible, the agent should return its
+    deterministic fallback action.
+    """
+
+    agent = GreedyAgent()
+
+    observation = Observation(
+        position=(2, 2),
+        battery=3,
+        dirty_cells=frozenset(),
+        dynamic_obstacles=frozenset({
+            (2, 3),
+        }),
+    )
+
+    action = agent.select_observation(observation)
+
+    assert action == Action.UP

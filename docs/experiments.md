@@ -1,5 +1,11 @@
 # Experiments
 
+> **Note:** the three baseline scripts below now read their numbers from
+> `configs/` (V1 scenario) instead of hard-coded constants. Any version/model
+> can be run with
+> `python -m cleaning_vehicle.experiments.run_experiment --version v2 --model q_learning`.
+
+
 ## Overview
 
 Version 1 uses controlled experiments to compare different agent strategies in the autonomous cleaning environment.

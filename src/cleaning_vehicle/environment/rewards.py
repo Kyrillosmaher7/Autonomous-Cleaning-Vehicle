@@ -6,35 +6,25 @@ from dataclasses import dataclass
 @dataclass(frozen=True, slots=True)
 class RewardConfig:
     """
-    Reward configuration for V1.
+    Reward values used by the environment.
 
-    The values are intentionally kept configurable so the
-    reward policy can be changed without modifying the
-    environment implementation.
+    The values come from the ``rewards`` section of the environment
+    YAML file at runtime. The defaults here only apply when the
+    environment is built directly in code (for example in tests).
     """
 
     clean: float = 10.0
     move: float = -1.0
     invalid: float = -2.0
     completion: float = 20.0
+    charging: float = 1.0
+    low_battery: float = -1.0
 
 
 class RewardCalculator:
-    """
-    Calculates rewards for the cleaning vehicle.
+    """Thin accessor around a :class:`RewardConfig`."""
 
-    Reward policy:
-
-        Clean dirty cell   -> +10
-        Valid movement     -> -1
-        Invalid movement   -> -2
-        Complete cleaning  -> +20
-    """
-
-    def __init__(
-        self,
-        config: RewardConfig | None = None,
-    ) -> None:
+    def __init__(self, config: RewardConfig | None = None) -> None:
         self.config = config or RewardConfig()
 
     def movement_reward(self) -> float:
@@ -50,5 +40,13 @@ class RewardCalculator:
         return self.config.clean
 
     def completion_reward(self) -> float:
-        """Bonus for completing the cleaning task."""
+        """Bonus for cleaning the last dirty cell."""
         return self.config.completion
+
+    def charging_reward(self) -> float:
+        """Reward for actually recharging the battery."""
+        return self.config.charging
+
+    def low_battery_reward(self) -> float:
+        """Penalty applied while operating at low battery."""
+        return self.config.low_battery

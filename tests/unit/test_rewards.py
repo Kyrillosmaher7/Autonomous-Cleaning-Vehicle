@@ -322,3 +322,86 @@ def test_custom_rewards_are_used():
 
     assert reward == 99.5
     assert done is False
+
+
+def test_reaching_charger_recharges_battery_and_gives_reward():
+    environment = CleaningEnvironment(
+        rows=3,
+        cols=3,
+        charging_station=(0, 0),
+        max_battery=10,
+    )
+
+    state = State(
+        position=(0, 1),
+        dirty_cells=frozenset({(2, 2)}),
+        battery=5,
+    )
+
+    next_state, reward, done = environment.step(
+        state,
+        Action.LEFT,
+    )
+
+    assert next_state.position == (0, 0)
+    assert next_state.battery == 10
+
+    # Movement (-1.0) + charging (+1.0) = 0.0.
+    assert reward == 0.0
+
+    assert done is False
+
+
+def test_full_battery_does_not_get_charging_reward():
+    environment = CleaningEnvironment(
+        rows=3,
+        cols=3,
+        charging_station=(0, 0),
+        max_battery=10,
+    )
+
+    state = State(
+        position=(0, 0),
+        dirty_cells=frozenset({(2, 2)}),
+        battery=10,
+    )
+
+    next_state, reward, done = environment.step(
+        state,
+        Action.RIGHT,
+    )
+
+    assert next_state.position == (0, 1)
+    assert next_state.battery == 9
+
+    # Movement only:
+    # -1 movement
+    assert reward == -1.0
+
+    assert done is False
+
+
+def test_low_battery_gets_penalty_away_from_charger():
+    environment = CleaningEnvironment(
+        rows=3,
+        cols=3,
+        charging_station=(0, 0),
+        max_battery=10,
+        low_battery_threshold=3,
+    )
+
+    state = State(
+        position=(1, 1),
+        dirty_cells=frozenset({(2, 2)}),
+        battery=4,
+    )
+
+    next_state, reward, done = environment.step(
+        state,
+        Action.RIGHT,
+    )
+
+    assert next_state.position == (1, 2)
+    assert next_state.battery == 3
+    assert reward == -2.0
+    assert done is False

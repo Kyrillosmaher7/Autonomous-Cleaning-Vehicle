@@ -1,3 +1,4 @@
+from cleaning_vehicle.environment.observation import Observation
 import pytest
 
 from cleaning_vehicle.agents.q_learning import QLearningAgent
@@ -144,3 +145,256 @@ def test_q_table_size(state):
     )
 
     assert agent.table_size == 1
+
+
+# ==========================================================
+# V2 - Partial Observation
+# ==========================================================
+
+
+def test_q_learning_agent_select_observation_returns_action():
+    """
+    V2:
+    QLearningAgent must be able to select an action from
+    a partial Observation.
+    """
+
+    agent = QLearningAgent(
+        epsilon=0.0,
+        seed=42,
+    )
+
+    observation = Observation(
+        position=(2, 2),
+        battery=10,
+        dirty_cells=frozenset({
+            (2, 3),
+        }),
+        dynamic_obstacles=frozenset(),
+    )
+
+    action = agent.select_observation(observation)
+
+    assert isinstance(action, Action)
+
+
+def test_q_learning_agent_select_observation_uses_observation_as_q_state():
+    """
+    V2:
+    Q-values for an Observation must be independent from
+    Q-values for a different Observation.
+    """
+
+    agent = QLearningAgent(
+        epsilon=0.0,
+        seed=42,
+    )
+
+    observation_one = Observation(
+        position=(2, 2),
+        battery=10,
+        dirty_cells=frozenset({
+            (2, 3),
+        }),
+        dynamic_obstacles=frozenset(),
+    )
+
+    observation_two = Observation(
+        position=(2, 2),
+        battery=10,
+        dirty_cells=frozenset({
+            (0, 0),
+        }),
+        dynamic_obstacles=frozenset(),
+    )
+
+    agent.q_table[
+        (observation_one, Action.RIGHT)
+    ] = 10.0
+
+    agent.q_table[
+        (observation_two, Action.LEFT)
+    ] = 20.0
+
+    assert (
+        agent.best_observation_action(observation_one)
+        == Action.RIGHT
+    )
+
+    assert (
+        agent.best_observation_action(observation_two)
+        == Action.LEFT
+    )
+
+
+def test_q_learning_agent_select_observation_is_greedy_when_epsilon_zero():
+    """
+    V2:
+    With epsilon=0, the agent should select the action
+    with the highest Q-value for the observation.
+    """
+
+    agent = QLearningAgent(
+        epsilon=0.0,
+        seed=42,
+    )
+
+    observation = Observation(
+        position=(2, 2),
+        battery=10,
+        dirty_cells=frozenset({
+            (2, 3),
+        }),
+        dynamic_obstacles=frozenset(),
+    )
+
+    agent.q_table[
+        (observation, Action.RIGHT)
+    ] = 10.0
+
+    agent.q_table[
+        (observation, Action.LEFT)
+    ] = 1.0
+
+    agent.q_table[
+        (observation, Action.UP)
+    ] = 2.0
+
+    agent.q_table[
+        (observation, Action.DOWN)
+    ] = 3.0
+
+    assert (
+        agent.select_observation(observation)
+        == Action.RIGHT
+    )
+
+
+def test_q_learning_agent_select_observation_explores_when_epsilon_one():
+    """
+    V2:
+    With epsilon=1, the agent should use random exploration.
+    """
+
+    agent = QLearningAgent(
+        epsilon=1.0,
+        seed=42,
+    )
+
+    observation = Observation(
+        position=(2, 2),
+        battery=10,
+        dirty_cells=frozenset(),
+        dynamic_obstacles=frozenset(),
+    )
+
+    actions = {
+        agent.select_observation(observation)
+        for _ in range(20)
+    }
+
+    assert actions
+    assert actions.issubset(set(Action))
+
+
+def test_q_learning_agent_observation_q_values_are_independent():
+    """
+    V2:
+    Two observations representing different partial views
+    must have independent Q-values.
+    """
+
+    agent = QLearningAgent(
+        epsilon=0.0,
+        seed=42,
+    )
+
+    observation_one = Observation(
+        position=(1, 1),
+        battery=10,
+        dirty_cells=frozenset({
+            (1, 2),
+        }),
+        dynamic_obstacles=frozenset(),
+    )
+
+    observation_two = Observation(
+        position=(1, 1),
+        battery=10,
+        dirty_cells=frozenset(),
+        dynamic_obstacles=frozenset(),
+    )
+
+    agent.q_table[
+        (observation_one, Action.RIGHT)
+    ] = 15.0
+
+    assert (
+        agent.get_observation_q_value(
+            observation_one,
+            Action.RIGHT,
+        )
+        == 15.0
+    )
+
+    assert (
+        agent.get_observation_q_value(
+            observation_two,
+            Action.RIGHT,
+        )
+        == 0.0
+    )
+
+
+def test_q_learning_agent_observation_does_not_modify_v1_q_table():
+    """
+    V2:
+    Adding observation-based Q-values must not interfere
+    with the existing State-based V1 Q-table.
+    """
+
+    agent = QLearningAgent(
+        epsilon=0.0,
+        seed=42,
+    )
+
+    state = State(
+        position=(1, 1),
+        battery=10,
+        dirty_cells=frozenset({
+            (1, 2),
+        }),
+    )
+
+    observation = Observation(
+        position=(1, 1),
+        battery=10,
+        dirty_cells=frozenset({
+            (1, 2),
+        }),
+        dynamic_obstacles=frozenset(),
+    )
+
+    agent.q_table[
+        (state, Action.RIGHT)
+    ] = 5.0
+
+    agent.q_table[
+        (observation, Action.RIGHT)
+    ] = 20.0
+
+    assert (
+        agent.get_q_value(
+            state,
+            Action.RIGHT,
+        )
+        == 5.0
+    )
+
+    assert (
+        agent.get_observation_q_value(
+            observation,
+            Action.RIGHT,
+        )
+        == 20.0
+    )
