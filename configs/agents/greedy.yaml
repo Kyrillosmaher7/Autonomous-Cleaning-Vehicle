@@ -1,0 +1,6 @@
+algorithm: greedy
+name: "Greedy agent"
+description: "Walks to the nearest known dirty cell. Baseline."
+status: available
+requires_training: false
+hyperparameters: {}

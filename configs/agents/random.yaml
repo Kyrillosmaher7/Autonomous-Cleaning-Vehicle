@@ -1,0 +1,6 @@
+algorithm: random
+name: "Random agent"
+description: "Picks a random action every step. Baseline."
+status: available
+requires_training: false
+hyperparameters: {}

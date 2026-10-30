@@ -1,0 +1,6 @@
+# V3 - not implemented yet. Hidden from the launcher until
+# `status` is changed to `available` and the environment supports it.
+
+version: v3
+name: "V3 - (planned)"
+status: planned

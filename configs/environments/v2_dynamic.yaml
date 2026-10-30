@@ -1,0 +1,39 @@
+# V2 - dynamic, partially observable environment.
+# The agent only sees dirt and moving obstacles within `radius` cells.
+
+version: v2
+name: "V2 - Dynamic & partial observation"
+description: "Moving obstacles, new dirt over time, limited vision."
+status: available
+
+environment:
+  grid:
+    rows: 10
+    cols: 10
+  start_position: [0, 0]
+  charging_station: [0, 0]
+  static_obstacles: [[2, 2], [2, 3], [3, 2]]
+  battery:
+    max: 50
+    initial: 50
+    low_threshold: 5
+  dirt:
+    initial_cells: [[1, 1], [3, 3], [5, 5]]
+    spawn_probability: 0.05
+    max_dirty_cells: 5
+  dynamic_obstacles:
+    positions: [[4, 4], [6, 6]]
+    move_probability: 0.2
+  observation:
+    mode: partial
+    radius: 1
+  rewards:
+    clean: 10.0
+    move: -1.0
+    invalid: -2.0
+    completion: 20.0
+    charging: 1.0
+    low_battery: -1.0
+
+training:
+  max_steps: 200

@@ -1,0 +1,30 @@
+# Global defaults.
+#
+# Every environment file (environments/*.yaml) is merged ON TOP of this
+# file, so anything defined here can be overridden per version.
+# Agent files (agents/*.yaml) only add the "agent" section.
+
+seed: 42
+
+training:
+  episodes: 1000          # Q-Learning training episodes
+  max_steps: 100          # steps per training episode
+
+evaluation:
+  episodes: 100           # greedy evaluation episodes (no learning)
+
+visualization:
+  cell_size: 55           # pixels per grid cell
+  speed_ms:               # delay between simulation steps
+    default: 500
+    fastest: 100
+    slowest: 1000
+  colors:
+    empty: "#ffffff"
+    dirty: "#f6d365"
+    static_obstacle: "#343a40"
+    dynamic_obstacle: "#ff6b6b"
+    robot: "#4dabf7"
+    charging: "#51cf66"
+    visible: "#dbeafe"
+    grid_line: "#adb5bd"
